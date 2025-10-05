@@ -9,9 +9,40 @@ import PyPDF2
 import io
 import re
 
-# Initialize Groq client with environment variable
+# Initialize Groq client from Streamlit secrets (key: "api_token") with fallbacks
 import os
-groq_client = Groq(api_key="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")
+
+def get_groq_client() -> Groq:
+    """Return a Groq client initialized from Streamlit secrets or environment variables.
+
+    Lookup order:
+    1. st.secrets["api_token"]
+    2. os.environ["API_TOKEN"]
+    3. os.environ["GROQ_API_KEY"]
+
+    Raises RuntimeError with an actionable message if no token is found.
+    """
+    token = None
+    # Prefer Streamlit secrets (works with deployed apps and local secrets.toml)
+    try:
+        token = st.secrets.get("api_token")
+    except Exception:
+        token = None
+
+    # Fallback to environment variables
+    if not token:
+        token = os.environ.get("API_TOKEN") or os.environ.get("GROQ_API_KEY")
+
+    if not token:
+        raise RuntimeError(
+            "GROQ API token not found. Please add 'api_token' to Streamlit secrets (secrets.toml) "
+            "or set the 'API_TOKEN' or 'GROQ_API_KEY' environment variable."
+        )
+
+    return Groq(api_key=token)
+
+
+groq_client = get_groq_client()
 
 st.set_page_config(
     page_title="AI STUDY BUDDY",
