@@ -45,7 +45,7 @@ def get_groq_client() -> Groq:
 groq_client = get_groq_client()
 
 st.set_page_config(
-    page_title="AI STUDY BUDDY",
+    page_title="AI STUDY BUDDY f",
     page_icon="🤖",
 )
 # Remove hidden reasoning from model outputs
