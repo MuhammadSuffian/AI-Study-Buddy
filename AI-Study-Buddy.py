@@ -290,6 +290,7 @@ st.markdown("""
 # Streamlit UI - Header
 st.markdown('<div class="app-header">', unsafe_allow_html=True)
 st.title("AI STUDY BUDDY")
+st.markdown('<p style="margin:0; font-size:14px; color:#555;">Upload your documents and get accurate, source-backed answers — save any AI response as a Word document.</p>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # App state
@@ -306,6 +307,12 @@ if "chat_history" not in st.session_state:
 
 # Query UI (enabled once an index exists)
 vectorstore_ready = st.session_state.get("vectorstore") is not None
+
+# Primary CTA button in header: if no index, prompt to upload; if index ready, focus chat input
+if not vectorstore_ready:
+    st.markdown('<div style="margin-top:8px;text-align:center;margin-bottom:8px;"><button onclick="window.scrollTo(0, document.body.scrollHeight);document.querySelector(\'input[type=file]\')?.click();" style="background:#1976d2;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">📁 Upload documents</button><span style="margin-left:8px;color:#666;font-size:12px;">(We only use files locally in your session)</span></div>', unsafe_allow_html=True)
+else:
+    st.markdown('<div style="margin-top:8px;text-align:center;margin-bottom:8px;"><button onclick="document.querySelector(\'input[aria-label=\\"Ask anything about your documents...\\"]\')?.focus();" style="background:#1976d2;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">💬 Ask a question</button><span style="margin-left:8px;color:#666;font-size:12px;">(Tip: try "What is the summary?")</span></div>', unsafe_allow_html=True)
 
 # Main chat area
 st.markdown('<div class="chat-main">', unsafe_allow_html=True)
