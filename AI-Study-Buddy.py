@@ -8,6 +8,8 @@ from groq import Groq
 import PyPDF2
 import io
 import re
+import docx
+from docx.shared import Pt
 
 # Initialize Groq client from Streamlit secrets (key: "api_token") with fallbacks
 import os
@@ -318,7 +320,37 @@ with st.container():
             if message["role"] == "user":
                 st.markdown(f'<div class="user-message">{message["content"]}</div>', unsafe_allow_html=True)
             else:
+                # Display the AI message and a 'Save as Word' download button for that specific response
                 st.markdown(f'<div class="ai-message">{message["content"]}</div>', unsafe_allow_html=True)
+                try:
+                    # Create a .docx in memory
+                    def create_docx_bytes(title: str, text: str) -> bytes:
+                        doc = docx.Document()
+                        # Title
+                        if title:
+                            p = doc.add_paragraph()
+                            run = p.add_run(title)
+                            run.bold = True
+                            run.font.size = Pt(14)
+                        # Body
+                        doc.add_paragraph(text)
+                        bio = io.BytesIO()
+                        doc.save(bio)
+                        bio.seek(0)
+                        return bio.read()
+
+                    filename = "ai_response.docx"
+                    # Use the first 20 chars of the response as a short title if available
+                    short_title = (message["content"] or "response").strip().splitlines()[0][:20]
+                    docx_bytes = create_docx_bytes(short_title, message["content"])
+                    st.download_button(label="Save as Word",
+                                       data=docx_bytes,
+                                       file_name=filename,
+                                       mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                       key=f"download_{len(st.session_state.chat_history)}")
+                except Exception:
+                    # If docx generation fails silently, don't break the app; just skip the button
+                    pass
     else:
         # Welcome message
         st.markdown(f'<div class="ai-message">👋 Hi! I\'m your AI Study Assistant. Upload some documents in the sidebar and start asking questions!</div>', unsafe_allow_html=True)
