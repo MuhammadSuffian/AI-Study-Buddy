@@ -42,14 +42,15 @@ def get_groq_client() -> Groq:
         )
 
     return Groq(api_key=token)
-
-
-groq_client = get_groq_client()
+    
 
 st.set_page_config(
     page_title="AI STUDY BUDDY",
     page_icon="🤖",
 )
+
+# Initialize Groq client
+groq_client = get_groq_client()
 # Remove hidden reasoning from model outputs
 THINK_TAG_RE = re.compile(r"<think>[\s\S]*?</think>", re.IGNORECASE)
 
@@ -308,11 +309,82 @@ if "chat_history" not in st.session_state:
 # Query UI (enabled once an index exists)
 vectorstore_ready = st.session_state.get("vectorstore") is not None
 
-# Primary CTA button in header: if no index, prompt to upload; if index ready, focus chat input
+# Primary CTA button in header implemented with Streamlit so clicks can open a real uploader or focus input
+if 'show_top_uploader' not in st.session_state:
+    st.session_state['show_top_uploader'] = False
+if 'focus_chat' not in st.session_state:
+    st.session_state['focus_chat'] = False
+
 if not vectorstore_ready:
-    st.markdown('<div style="margin-top:8px;text-align:center;margin-bottom:8px;"><button onclick="window.scrollTo(0, document.body.scrollHeight);document.querySelector(\'input[type=file]\')?.click();" style="background:#1976d2;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">📁 Upload documents</button><span style="margin-left:8px;color:#666;font-size:12px;">(We only use files locally in your session)</span></div>', unsafe_allow_html=True)
+    if st.button("📁 Upload documents", key="header_upload_btn"):
+        st.session_state['show_top_uploader'] = True
+    st.markdown('<div style="margin-top:4px;color:#666;font-size:12px;text-align:center;">(We only use files locally in your session)</div>', unsafe_allow_html=True)
 else:
-    st.markdown('<div style="margin-top:8px;text-align:center;margin-bottom:8px;"><button onclick="document.querySelector(\'input[aria-label=\\"Ask anything about your documents...\\"]\')?.focus();" style="background:#1976d2;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">💬 Ask a question</button><span style="margin-left:8px;color:#666;font-size:12px;">(Tip: try "What is the summary?")</span></div>', unsafe_allow_html=True)
+    if st.button("💬 Ask a question", key="header_ask_btn"):
+        st.session_state['focus_chat'] = True
+    st.markdown('<div style="margin-top:4px;color:#666;font-size:12px;text-align:center;">(Tip: try "What is the summary?")</div>', unsafe_allow_html=True)
+
+# If the ask button was clicked, focus the chat input on the client via a small script
+if st.session_state.get('focus_chat'):
+    st.markdown("""
+    <script>
+    setTimeout(function(){
+        var el = document.querySelector('input[placeholder="Ask anything about your documents..."]');
+        if(el) el.focus();
+    }, 100);
+    </script>
+    """, unsafe_allow_html=True)
+    st.session_state['focus_chat'] = False
+
+# Header uploader area (revealed when user clicks the header Upload button)
+if st.session_state.get('show_top_uploader'):
+    st.markdown("### Upload documents (quick)")
+    top_uploaded_files = st.file_uploader("Upload documents", type=["txt", "pdf"], accept_multiple_files=True, key="top_uploader", label_visibility="collapsed")
+    if top_uploaded_files:
+        st.info("Files selected. Click 'Process documents (header)' to build the index.")
+        if st.button("Process documents (header)", key="process_top"):
+            with st.spinner("Processing and indexing documents..."):
+                try:
+                    docs = []
+                    for file in top_uploaded_files:
+                        if file.type == "text/plain":
+                            text = file.read().decode("utf-8", errors="ignore")
+                        elif file.type == "application/pdf":
+                            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
+                            text = ""
+                            for page in pdf_reader.pages:
+                                page_text = page.extract_text() or ""
+                                text += page_text + "\n"
+                        else:
+                            st.error(f"Unsupported file type: {file.type}")
+                            continue
+
+                        text = (text or "").strip()
+                        if not text:
+                            st.warning(f"No extractable text in {file.name}; skipping.")
+                            continue
+
+                        docs.append(Document(page_content=text, metadata={"filename": file.name}))
+
+                    if not docs:
+                        st.error("No valid documents to index.")
+                    else:
+                        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+                        chunks = splitter.split_documents(docs)
+
+                        if not chunks:
+                            st.error("Documents produced zero chunks; try different files.")
+                        else:
+                            embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+                            st.session_state["vectorstore"] = FAISS.from_documents(chunks, embeddings)
+                            st.session_state["num_docs"] = len(docs)
+                            st.session_state["num_chunks"] = len(chunks)
+                            st.success(f"✅ Indexed {len(docs)} documents into {len(chunks)} chunks.")
+                            # reset header uploader visibility
+                            st.session_state['show_top_uploader'] = False
+                            st.rerun()
+                except Exception as e:
+                    st.error(f"Indexing failed: {e}")
 
 # Main chat area
 st.markdown('<div class="chat-main">', unsafe_allow_html=True)
