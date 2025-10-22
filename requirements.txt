@@ -6,5 +6,6 @@ PyPDF2
 sentence-transformers
 torch
 langchain-community
+langchain-text-splitters
 transformers
 python-docx
