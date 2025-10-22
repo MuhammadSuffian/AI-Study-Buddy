@@ -3,7 +3,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+
 from groq import Groq
 import PyPDF2
 import io
