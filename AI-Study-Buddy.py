@@ -1,9 +1,9 @@
 import streamlit as st
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
-from langchain.prompts import PromptTemplate
+from langchain_community.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.docstore.document import Document
+from langchain_community.prompts import PromptTemplate
 from groq import Groq
 import PyPDF2
 import io
