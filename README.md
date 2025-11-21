@@ -2,6 +2,10 @@
 
 A Retrieval-Augmented Generation (RAG) chatbot that uses Groq API for fast inference and Streamlit for the web interface.
 
+## Live Demo
+
+https://ai-study-buddy-beta.streamlit.app/
+
 ## Setup
 
 1. Install dependencies:
