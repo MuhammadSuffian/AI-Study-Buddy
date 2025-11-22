@@ -36,6 +36,3 @@ streamlit run test.py
 - Fast inference with Groq API
 - Interactive web interface
 
-## Security Note
-
-⚠️ **Important**: Never commit your API keys to version control. Use environment variables instead.
