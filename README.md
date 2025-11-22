@@ -16,7 +16,7 @@ pip install -r requirements.txt
 2. Set your Groq API key as an environment variable:
 ```bash
 # Windows
-set GROQ_API_KEY=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
+set GROQ_API_KEY=Api key here
 
 # Linux/Mac
 export GROQ_API_KEY=your_groq_api_key_here
