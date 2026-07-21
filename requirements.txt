@@ -9,3 +9,5 @@ langchain-community
 langchain-text-splitters
 transformers
 python-docx
+selenium 
+webdriver-manager
